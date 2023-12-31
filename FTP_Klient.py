@@ -17,7 +17,6 @@ def __enter_untuk_kembali(__pesan : str | None = None):
     input(f"{Fore.RESET}Tekan enter untuk kembali")
 def __tutup_program():
     print(f"{Fore.LIGHTRED_EX}Program ditutup{Fore.RESET}")
-    exit()
 def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = False):
     MENU_FTP = f"""[-] {Fore.LIGHTRED_EX}putuskan koneksi{Fore.RESET}
 [0] bersihkan layar
