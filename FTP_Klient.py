@@ -5,6 +5,7 @@ from tkinter.filedialog import askopenfilename, askdirectory
 from typing import Literal
 from colorama import Fore
 from socket import gaierror
+from os.path import exists, getsize
 
 def __bersihkan_layar(__teks : str | None = None):
     run("cls" if system() == "Windows" else "clear", shell = True)
@@ -16,7 +17,6 @@ def __enter_untuk_kembali(__pesan : str | None = None):
     input(f"{Fore.RESET}Tekan enter untuk kembali")
 def __tutup_program():
     print(f"{Fore.LIGHTRED_EX}Program ditutup{Fore.RESET}")
-    exit()
 def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = False):
     MENU_FTP = f"""[-] {Fore.LIGHTRED_EX}putuskan koneksi{Fore.RESET}
 [0] bersihkan layar
@@ -36,7 +36,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
         if alamat_server_ftp:
             break
         else:
-            print(f"{Fore.LIGHTRED_EX}Input server FTP kosong!")
+            print(f"{Fore.LIGHTRED_EX}Input alamat server FTP kosong!")
     if tls:
         PORT_FTP_DEFAULT = 990
     else:
@@ -72,10 +72,12 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
             print(f"{Fore.LIGHTBLUE_EX}{__server_ftp.connect(host = alamat_server_ftp, port = port_ftp)}")
         except TimeoutError as error:
             __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Koneksi ke server FTP {alamat_server_ftp} port {port_ftp} gagal!\n{Fore.LIGHTBLUE_EX}{error}")
-        except gaierror as error:
-            __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Tidak dapat terhubung ke server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
         except ConnectionRefusedError as error:
             __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Server FTP {alamat_server_ftp} port {port_ftp} menolak untuk terhubung\n{Fore.LIGHTBLUE_EX}{error}")
+        except gaierror as error:
+            __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Tidak dapat terhubung ke server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
+        except OSError as error:
+            __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Tidak dapat terhubung ke server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
         else:
             KONEKSI_TERHUBUNG = f"{Fore.LIGHTGREEN_EX}Terhubung ke server FTP {alamat_server_ftp} port {port_ftp}"
             print(KONEKSI_TERHUBUNG)
@@ -108,6 +110,9 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                 input(f"{Fore.RESET}Tekan enter untuk melanjutkan")
                 argumen_ftp : bool = True
                 while argumen_ftp:
+                    def memutuskan_koneksi():
+                        print(f"{Fore.LIGHTYELLOW_EX}Memutuskan koneksi dari server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{server_ftp.quit()}")
+                        __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Terputus dari server FTP {alamat_server_ftp} port {port_ftp}")
                     if __login_anonymous == True:
                         __bersihkan_layar(f"{KONEKSI_TERHUBUNG} dalam mode anonymous login\n\nTekan Ctrl + C untuk diskonek\n\n{Fore.LIGHTBLUE_EX}{__server_ftp.getwelcome()}{Fore.RESET}\n\n{MENU_FTP}")
                     else:
@@ -116,9 +121,8 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                         argumen = input(f"{Fore.RESET}Pilih nomor : ")
                         match argumen:
                             case "-":
-                                print(f"{Fore.LIGHTRED_EX}Terputus dari server FTP {alamat_server_ftp}")
+                                memutuskan_koneksi()
                                 argumen_ftp = False
-                                __enter_untuk_kembali(f"{Fore.LIGHTBLUE_EX}{server_ftp.quit()}")
                                 break
                             case "0":
                                 break
@@ -179,7 +183,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                         if nama_file_baru:
                                             if __periksa_karakter(nama_file_baru, "file"):
                                                 try:
-                                                    __server_ftp.rename(nama_file_lama, nama_file_baru)
+                                                    print(Fore.LIGHTBLUE_EX + __server_ftp.rename(nama_file_lama, nama_file_baru))
                                                 except error_perm as error:
                                                     print(f"{Fore.LIGHTRED_EX}Tidak dapat mengganti nama file dari \"{nama_file_lama}\" menjadi \"{nama_file_baru}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                                 else:
@@ -194,7 +198,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                     if __periksa_karakter(argumen, "file"):
                                         print(f"{Fore.LIGHTYELLOW_EX}Menghapus file \"{argumen}\"")
                                         try:
-                                            __server_ftp.delete(argumen)
+                                            print(Fore.LIGHTBLUE_EX + __server_ftp.delete(argumen))
                                         except error_perm as error:
                                             print(f"{Fore.LIGHTRED_EX}Gagal menghapus file \"{argumen}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                         else:
@@ -202,27 +206,38 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                 else:
                                     print(f"{Fore.LIGHTRED_EX}Input nama file kosong!")
                             case "9":
-                                __server_ftp.dir()
-                                file_server = input(f"{Fore.RESET}Masukkan nama file dari direktori saat ini : ")
-                                if file_server:
-                                    if __periksa_karakter(file_server, "file"):
-                                        lokasi_download = __buka_jendela_baru("Pilih folder untuk mengunduh file", "pilih folder")
-                                        if lokasi_download:
-                                            print(f"{Fore.LIGHTYELLOW_EX}Mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}")
-                                            try:
-                                                with open(f"{lokasi_download}/{file_server}", "xb") as file_yang_di_download:
-                                                    if __server_ftp.pwd() == "/":
-                                                        __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write)
-                                                    else:
-                                                        __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write)
-                                            except error_perm as error:
-                                                print(f"{Fore.LIGHTRED_EX}Gagal mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
+                                if len(__server_ftp.nlst()) > 0:
+                                    print(Fore.LIGHTGREEN_EX); __server_ftp.dir()
+                                    file_server = input(f"{Fore.RESET}Masukkan nama file dari direktori {__server_ftp.pwd()} : ")
+                                    if file_server:
+                                        if __periksa_karakter(file_server, "file"):
+                                            lokasi_download = __buka_jendela_baru("Pilih folder untuk mengunduh file", "pilih folder")
+                                            if lokasi_download:
+                                                print(f"{Fore.LIGHTYELLOW_EX}Mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}")
+                                                try:
+                                                    with open(f"{lokasi_download}/{file_server}", "wb") as file_yang_di_download:
+                                                        if __server_ftp.pwd() == "/":
+                                                            ukuran_file = __server_ftp.size(f"/{file_server}")
+                                                            if isinstance(ukuran_file, int):
+                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write, ukuran_file))
+                                                            else:
+                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write))
+                                                        else:
+                                                            ukuran_file = __server_ftp.size(f"{__server_ftp.pwd()}/{file_server}")
+                                                            if isinstance(ukuran_file, int):
+                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write, ukuran_file))
+                                                            else:
+                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write))
+                                                except error_perm as error:
+                                                    print(f"{Fore.LIGHTRED_EX}Gagal mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
+                                                else:
+                                                    print(f"{Fore.LIGHTGREEN_EX}File \"{file_server}\" telah diunduh dari server FTP {alamat_server_ftp}")
                                             else:
-                                                print(f"{Fore.LIGHTGREEN_EX}File \"{file_server}\" telah diunduh dari server FTP {alamat_server_ftp}")
-                                        else:
-                                            print(f"{Fore.LIGHTRED_EX}Folder tidak dipilih!")
+                                                print(f"{Fore.LIGHTRED_EX}Folder tidak dipilih!")
+                                    else:
+                                        print(f"{Fore.LIGHTRED_EX}Input nama file kosong!")
                                 else:
-                                    print(f"{Fore.LIGHTRED_EX}Input nama file kosong!")
+                                    print(f"File dari direktori {__server_ftp.pwd()} kosong!")
                             case "10":
                                 file_klient = __buka_jendela_baru("Pilih file untuk diupload ke server FTP", "pilih file")
                                 if "/" in file_klient:
@@ -231,15 +246,29 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                     try:
                                         with open(file_klient, mode = "rb") as file_yang_di_upload:
                                             if __server_ftp.pwd() == "/":
-                                                __server_ftp.storbinary(f"STOR /{nama_file}", file_yang_di_upload)
+                                                print(Fore.LIGHTBLUE_EX + __server_ftp.storbinary(f"STOR /{nama_file}", file_yang_di_upload, getsize(file_klient)))
                                             else:
-                                                __server_ftp.storbinary(f"STOR {__server_ftp.pwd()}/{nama_file}", file_yang_di_upload)
+                                                print(Fore.LIGHTBLUE_EX + __server_ftp.storbinary(f"STOR {__server_ftp.pwd()}/{nama_file}", file_yang_di_upload))
                                     except error_perm as error:
                                         print(f"{Fore.LIGHTRED_EX}Gagal mengupload file \"{file_klient}\" ke server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
                                     else:
                                         print(f"{Fore.LIGHTGREEN_EX}File \"{nama_file}\" telah diupload ke server FTP {alamat_server_ftp}")
                                 else:
                                     print(f"{Fore.LIGHTRED_EX}File tidak dipilih!")
+                        print(f"{Fore.LIGHTYELLOW_EX}Memeriksa kode respon server FTP ...")
+                        putuskan_koneksi : bool = False
+                        KODE_RESPON = __server_ftp.lastresp
+                        match KODE_RESPON:
+                            case "530":
+                                print(f"{Fore.LIGHTRED_EX}Autentikasi tidak valid!")
+                                putuskan_koneksi = True
+                            case "534":
+                                putuskan_koneksi = True
+                        print(f"{Fore.LIGHTGREEN_EX}Kode respon server FTP {Fore.LIGHTBLUE_EX}{KODE_RESPON}")
+                        if putuskan_koneksi:
+                            memutuskan_koneksi()
+                            argumen_ftp = False
+                            break
     try:
         if not tls:
             with FTP() as server_ftp:
@@ -281,6 +310,7 @@ try:
             argumen = input(f"{Fore.RESET}Pilih nomor : ")
             match argumen:
                 case "-":
+                    __menu_beranda = False
                     __tutup_program()
                 case "0":
                     break
