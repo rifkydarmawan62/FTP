@@ -1,11 +1,11 @@
 from ftplib import FTP, FTP_TLS, error_perm
 from platform import system
 from subprocess import run
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
 from typing import Literal
 from colorama import Fore
-from socket import gaierror
-from os.path import exists, getsize
+from os.path import getsize, exists
+from os import remove
 
 def __bersihkan_layar(__teks : str | None = None):
     run("cls" if system() == "Windows" else "clear", shell = True)
@@ -74,9 +74,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
             __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Koneksi ke server FTP {alamat_server_ftp} port {port_ftp} gagal!\n{Fore.LIGHTBLUE_EX}{error}")
         except ConnectionRefusedError as error:
             __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Server FTP {alamat_server_ftp} port {port_ftp} menolak untuk terhubung\n{Fore.LIGHTBLUE_EX}{error}")
-        except gaierror as error:
-            __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Tidak dapat terhubung ke server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
-        except OSError as error:
+        except Exception as error:
             __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Tidak dapat terhubung ke server FTP {alamat_server_ftp} port {port_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
         else:
             KONEKSI_TERHUBUNG = f"{Fore.LIGHTGREEN_EX}Terhubung ke server FTP {alamat_server_ftp} port {port_ftp}"
@@ -86,7 +84,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                 print(f"{Fore.LIGHTYELLOW_EX}Melakukan autentikasi SSL/TLS ...")
                 try:
                     print(f"{Fore.LIGHTBLUE_EX}{__server_ftp.auth()}")
-                except error_perm as error:
+                except Exception as error:
                     __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Autentikasi SSL/TLS gagal!\n{Fore.LIGHTBLUE_EX}{error}")
                     koneksi_error = True
                 else:
@@ -101,7 +99,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                         print(f"{Fore.LIGHTBLUE_EX}{__server_ftp.login(user = nama_pengguna, passwd = kata_sandi)}")
                     else:
                         print(f"{Fore.LIGHTBLUE_EX}{__server_ftp.login()}")
-                except error_perm as error:
+                except Exception as error:
                     __enter_untuk_kembali(f"{Fore.LIGHTRED_EX}Login gagal\n{Fore.LIGHTBLUE_EX}{error}")
                     koneksi_error = True
                 else:
@@ -129,14 +127,14 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                             case "1":
                                 try:
                                     print(f"{Fore.LIGHTGREEN_EX}Direktori saat ini {__server_ftp.pwd()}")
-                                except error_perm as error:
+                                except Exception as error:
                                     print(f"{Fore.LIGHTRED_EX}Gagal menampilkan direktori saat ini\n{Fore.LIGHTBLUE_EX}{error}")
                             case "2":
                                 argumen = input(f"{Fore.RESET}Masukkan direktori : ")
                                 if argumen:
                                     try:
                                         __server_ftp.cwd(argumen)
-                                    except error_perm as error:
+                                    except Exception as error:
                                         print(f"{Fore.LIGHTRED_EX}Gagal mengganti direktori ke \"{argumen}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                         print(f"{Fore.LIGHTGREEN_EX}Direktori saat ini {__server_ftp.pwd()}")
                                     else:
@@ -155,7 +153,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                 if argumen:
                                     try:
                                         direktori = __server_ftp.rmd(argumen)
-                                    except error_perm as error:
+                                    except Exception as error:
                                         print(f"{Fore.LIGHTRED_EX}Gagal menghapus direktori \"{argumen}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                     else:
                                         print(f"{Fore.LIGHTGREEN_EX}Direktori dihapus menjadi {direktori}")
@@ -164,14 +162,14 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                             case "5":
                                 try:
                                     print(f"{Fore.LIGHTGREEN_EX}"); __server_ftp.dir(); print(Fore.RESET)
-                                except error_perm as error:
+                                except Exception as error:
                                     print(f"{Fore.LIGHTRED_EX}Gagal menampilkan direktori dan file\n{Fore.LIGHTBLUE_EX}{error}")
                             case "6":
                                 argumen = input(f"{Fore.RESET}Masukkan nama file : ")
                                 if argumen:
                                     try:
                                         print(f"{Fore.LIGHTGREEN_EX}{__server_ftp.size(argumen)} byte")
-                                    except error_perm as error:
+                                    except Exception as error:
                                         print(f"{Fore.LIGHTRED_EX}Error saat menampilkan ukuran file \"{argumen}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                 else:
                                     print(f"{Fore.LIGHTRED_EX}Input nama file kosong!")
@@ -184,7 +182,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                             if __periksa_karakter(nama_file_baru, "file"):
                                                 try:
                                                     print(Fore.LIGHTBLUE_EX + __server_ftp.rename(nama_file_lama, nama_file_baru))
-                                                except error_perm as error:
+                                                except Exception as error:
                                                     print(f"{Fore.LIGHTRED_EX}Tidak dapat mengganti nama file dari \"{nama_file_lama}\" menjadi \"{nama_file_baru}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                                 else:
                                                     print(f"{Fore.LIGHTGREEN_EX}Nama file diubah dari \"{nama_file_lama}\" menjadi \"{nama_file_baru}\"")
@@ -199,7 +197,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                         print(f"{Fore.LIGHTYELLOW_EX}Menghapus file \"{argumen}\"")
                                         try:
                                             print(Fore.LIGHTBLUE_EX + __server_ftp.delete(argumen))
-                                        except error_perm as error:
+                                        except Exception as error:
                                             print(f"{Fore.LIGHTRED_EX}Gagal menghapus file \"{argumen}\"\n{Fore.LIGHTBLUE_EX}{error}")
                                         else:
                                             print(f"{Fore.LIGHTGREEN_EX}File \"{argumen}\" dihapus!")
@@ -210,30 +208,121 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                     print(Fore.LIGHTGREEN_EX); __server_ftp.dir()
                                     file_server = input(f"{Fore.RESET}Masukkan nama file dari direktori {__server_ftp.pwd()} : ")
                                     if file_server:
-                                        if __periksa_karakter(file_server, "file"):
-                                            lokasi_download = __buka_jendela_baru("Pilih folder untuk mengunduh file", "pilih folder")
-                                            if lokasi_download:
-                                                print(f"{Fore.LIGHTYELLOW_EX}Mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}")
-                                                try:
-                                                    with open(f"{lokasi_download}/{file_server}", "wb") as file_yang_di_download:
-                                                        if __server_ftp.pwd() == "/":
-                                                            ukuran_file = __server_ftp.size(f"/{file_server}")
-                                                            if isinstance(ukuran_file, int):
-                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write, ukuran_file))
-                                                            else:
-                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write))
-                                                        else:
-                                                            ukuran_file = __server_ftp.size(f"{__server_ftp.pwd()}/{file_server}")
-                                                            if isinstance(ukuran_file, int):
-                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write, ukuran_file))
-                                                            else:
-                                                                print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write))
-                                                except error_perm as error:
-                                                    print(f"{Fore.LIGHTRED_EX}Gagal mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
+                                        for item_file in __server_ftp.nlst():
+                                            if item_file == file_server:
+                                                print(f"{Fore.LIGHTBLUE_EX}Tekan Alt + Tab untuk membuka jendela baru")
+                                                if "." in item_file:
+                                                    ekstensi_file = item_file.split(".")[-1].lower()
+                                                    if ekstensi_file != "":
+                                                        match ekstensi_file:
+                                                            case "png":
+                                                                deskripsi_tipe_file = "Portable Network Graphic"
+                                                            case "jpg":
+                                                                deskripsi_tipe_file = "Join Photographic Group"
+                                                            case "jpeg":
+                                                                deskripsi_tipe_file = "Join Photographic Expert Group"
+                                                            case "gif":
+                                                                deskripsi_tipe_file = "Graphics Interchange Format"
+                                                            case "bmp":
+                                                                deskripsi_tipe_file = "Bitmap Image"
+                                                            case "tiff":
+                                                                deskripsi_tipe_file = "Tagged Image File Format"
+                                                            case "svg":
+                                                                deskripsi_tipe_file = "Scalable Vector Graphic"
+                                                            case "pgm":
+                                                                deskripsi_tipe_file = "Portable Gray Map"
+                                                            case "ico":
+                                                                deskripsi_tipe_file = "File ikon Windows"
+                                                            case "tga":
+                                                                deskripsi_tipe_file = "Truevision Graphics Adapter"
+                                                            case "eps":
+                                                                deskripsi_tipe_file = "Encapsulated Post Script"
+                                                            case "jar":
+                                                                deskripsi_tipe_file = "Arsip Java"
+                                                            case "xml":
+                                                                deskripsi_tipe_file = "Extensible Markup Language"
+                                                            case "csv":
+                                                                deskripsi_tipe_file = "Comma Separate Value"
+                                                            case "bin":
+                                                                deskripsi_tipe_file = "File biner"
+                                                            case "json":
+                                                                deskripsi_tipe_file = "Java Script Object Notation"
+                                                            case "txt":
+                                                                deskripsi_tipe_file = "File teks"
+                                                            case "html":
+                                                                deskripsi_tipe_file = "Hyper Text Markup Language"
+                                                            case "md":
+                                                                deskripsi_tipe_file = "File markdown"
+                                                            case "exe":
+                                                                deskripsi_tipe_file = "File executable Windows"
+                                                            case "py":
+                                                                deskripsi_tipe_file = "File Python"
+                                                            case "pyd":
+                                                                deskripsi_tipe_file = "File Modul Python"
+                                                            case "pyc":
+                                                                deskripsi_tipe_file = "File Python terkompilasi"
+                                                            case "cp" | "cpp":
+                                                                deskripsi_tipe_file = "File C++"
+                                                            case "apk":
+                                                                deskripsi_tipe_file = "Android Package Kit"
+                                                            case "pdf":
+                                                                deskripsi_tipe_file = "Portable Document Format"
+                                                            case "cs":
+                                                                deskripsi_tipe_file = "File C#"
+                                                            case "asm":
+                                                                deskripsi_tipe_file = "File Assembly"
+                                                            case "bat":
+                                                                deskripsi_tipe_file = "File Batch Windows"
+                                                            case "dll":
+                                                                deskripsi_tipe_file = "Dynamic Link Library"
+                                                            case "sh":
+                                                                deskripsi_tipe_file = "Bash Shell Script"
+                                                            case "ps1":
+                                                                deskripsi_tipe_file = "PowerShell Script"
+                                                            case "vbs":
+                                                                deskripsi_tipe_file = "Visual Basic Script"
+                                                            case "nes":
+                                                                deskripsi_tipe_file = "Nintendo Entertainment System"
+                                                            case "h":
+                                                                deskripsi_tipe_file = "File Header"
+                                                            case "hp" | "hpp":
+                                                                deskripsi_tipe_file = "File Header C++"
+                                                            case "lib":
+                                                                deskripsi_tipe_file = "Compiled Library File"
+                                                            case _:
+                                                                deskripsi_tipe_file = f"File {ekstensi_file}"
+                                                        lokasi_download = asksaveasfilename(title = "Simpan File", confirmoverwrite = True, filetypes = [(deskripsi_tipe_file, ekstensi_file), ("Semua file", "*.*")], initialfile = file_server)
+                                                    else:
+                                                        lokasi_download = asksaveasfilename(title = "Simpan File", confirmoverwrite = True, filetypes = [("Semua file", "*.*")], initialfile = file_server)
                                                 else:
-                                                    print(f"{Fore.LIGHTGREEN_EX}File \"{file_server}\" telah diunduh dari server FTP {alamat_server_ftp}")
-                                            else:
-                                                print(f"{Fore.LIGHTRED_EX}Folder tidak dipilih!")
+                                                    lokasi_download = asksaveasfilename(title = "Simpan File", confirmoverwrite = True, filetypes = [("Semua file", "*.*")], initialfile = file_server)
+                                                if lokasi_download:
+                                                    print(f"{Fore.LIGHTYELLOW_EX}Mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}")
+                                                    try:
+                                                        with open(lokasi_download, "wb") as file_yang_di_download:
+                                                            if __server_ftp.pwd() == "/":
+                                                                ukuran_file = __server_ftp.size(f"/{file_server}")
+                                                                if isinstance(ukuran_file, int):
+                                                                    print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write, ukuran_file))
+                                                                else:
+                                                                    print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR /{file_server}", file_yang_di_download.write))
+                                                            else:
+                                                                ukuran_file = __server_ftp.size(f"{__server_ftp.pwd()}/{file_server}")
+                                                                if isinstance(ukuran_file, int):
+                                                                    print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write, ukuran_file))
+                                                                else:
+                                                                    print(Fore.LIGHTBLUE_EX + __server_ftp.retrbinary(f"RETR {__server_ftp.pwd()}/{file_server}", file_yang_di_download.write))
+                                                    except Exception as error:
+                                                        print(f"{Fore.LIGHTRED_EX}Gagal mengunduh file \"{file_server}\" dari server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
+                                                        if exists(lokasi_download):
+                                                            remove(lokasi_download)
+                                                    else:
+                                                        print(f"{Fore.LIGHTGREEN_EX}File \"{file_server}\" telah diunduh dari server FTP {alamat_server_ftp}")
+                                                else:
+                                                    print(f"{Fore.LIGHTRED_EX}File tidak disimpan!")
+                                                break
+                                        else:
+                                            print(f"{Fore.LIGHTRED_EX}File \"{file_server}\" tidak ditemukan!")
                                     else:
                                         print(f"{Fore.LIGHTRED_EX}Input nama file kosong!")
                                 else:
@@ -249,7 +338,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
                                                 print(Fore.LIGHTBLUE_EX + __server_ftp.storbinary(f"STOR /{nama_file}", file_yang_di_upload, getsize(file_klient)))
                                             else:
                                                 print(Fore.LIGHTBLUE_EX + __server_ftp.storbinary(f"STOR {__server_ftp.pwd()}/{nama_file}", file_yang_di_upload))
-                                    except error_perm as error:
+                                    except Exception as error:
                                         print(f"{Fore.LIGHTRED_EX}Gagal mengupload file \"{file_klient}\" ke server FTP {alamat_server_ftp}\n{Fore.LIGHTBLUE_EX}{error}")
                                     else:
                                         print(f"{Fore.LIGHTGREEN_EX}File \"{nama_file}\" telah diupload ke server FTP {alamat_server_ftp}")
