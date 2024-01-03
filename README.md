@@ -1,17 +1,20 @@
-File Transfer Protocol (FTP) untuk klient
+# Deskripsi
+> File Transfer Protocol (FTP) untuk klient
 # Instalasi
 > ## 1. Download
 >> ~~~
 >> git clone https://github.com/rifkydarmawan62/FTP
+>> cd FTP
 >> ~~~
 > ## 2. Install Pustaka Python
->> - Untuk Windows<br><code>pip install colorama</code>
->> - Untuk Linux<br><code>pip3 install colorama</code>
+>> | Sistem Operasi | Perintah |
+>> | --- | --- |
+>> | Windows | <code>pip install colorama</code> |
+>> | Linux | <code>pip3 install colorama</code> |
 > ## 3. Jalankan
->> <code>cd FTP</code>
->> - Untuk Windows
->>   - File Python<br><code>py FTP_Klient.py</code>
->>   - File Executable<br><code>FTP_Klient.exe</code>
->> - Untuk Linux<br><code>python3 FTP_Klient.py</code>
+>> | Sistem Operasi | Perintah
+>> | --- | --- |
+>> | Windows | <code>py FTP_Klient.py</code><br><code>FTP_Klient.exe</code>
+>> | Linux | <code>python3 FTP_Klient.py</code> |
 # Media Sosial
 > Instagram : [@rifkydarmawan62](https://instagram.com/rifkydarmawan62)
