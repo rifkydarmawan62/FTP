@@ -6,6 +6,7 @@ from typing import Literal
 from colorama import Fore
 from os.path import getsize, exists
 from os import remove
+from getpass import getpass
 
 def __bersihkan_layar(__teks : str | None = None):
     run("cls" if system() == "Windows" else "clear", shell = True)
@@ -60,7 +61,7 @@ def __menu_input_argumen(__login_anonymous : bool | None = False, tls : bool = F
             else:
                 print(f"{Fore.LIGHTRED_EX}Input nama pengguna kosong!")
         while True:
-            kata_sandi = input(f"{Fore.RESET}Masukkan kata sandi : {Fore.BLACK}")
+            kata_sandi = getpass(f"{Fore.RESET}Masukkan kata sandi : ")
             if kata_sandi:
                 __bersihkan_layar()
                 break
